@@ -14,4 +14,6 @@ Gem::Specification.new do |gem|
   gem.name          = "paperclip-imgix"
   gem.require_paths = ["lib"]
   gem.version       = Paperclip::Imgix::VERSION
+
+  gem.add_runtime_dependency("paperclip", "~> 3.0")
 end
