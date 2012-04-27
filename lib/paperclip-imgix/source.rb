@@ -1,5 +1,7 @@
 require 'digest/md5'
 
+# TODO: this is a hard-coded hack for now, need to make this actually work :)
+
 module Paperclip::Imgix
   class Source
     attr_reader :name, :type
