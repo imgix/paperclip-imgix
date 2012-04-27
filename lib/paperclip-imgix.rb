@@ -1,12 +1,13 @@
 require "paperclip"
 require "paperclip-imgix/version"
+require "paperclip-imgix/source"
 require "paperclip-imgix/style"
 require "paperclip-imgix/url_generator"
 require "paperclip-imgix/interpolations"
 require "paperclip-imgix/railtie"
 
 module Paperclip::Imgix
-  def self.create_config(value, env=nil)
+  def self.source(value, env=nil)
     value ||= Paperclip::Attachment.default_options[:imgix]
     value = value.call if value.respond_to?(:call)
     value = case value
@@ -20,16 +21,16 @@ module Paperclip::Imgix
     unless !value.is_a?(Hash) or value.empty?
       value.stringify_keys!
       env = Rails.env if env.blank?
-      (value[env] || value).symbolize_keys
+      Paperclip::Imgix::Source.new(value[env] || value)
     end
   end
 
   module ClassMethods
     def has_attached_file(name, options = {})
-      imgix = Paperclip::Imgix.create_config(options[:imgix])
-      if imgix
+      source = Paperclip::Imgix.source(options[:imgix])
+      if source
         options = options.dup
-        options[:imgix] = imgix
+        options[:imgix] = source
         options[:url_generator] = Paperclip::Imgix::UrlGenerator
         options[:interpolator] = Paperclip::Imgix::Interpolations
         if options[:styles]

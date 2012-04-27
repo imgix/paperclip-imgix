@@ -6,20 +6,15 @@ module Paperclip::Imgix
     end
 
     def for(style_name, options)
-      if options[:is_path_interpolation]
+      if style_name == :original || options[:is_path_interpolation]
         super
       else
-        url = super(:original, :escape => options[:escape])
-
         style = @attachment_options[:imgix_styles][style_name]
         if style
-          query = style.to_query(options[:style])
-          query = "?#{query}" unless query.blank?
+          @attachment.options[:imgix].url(@attachment, style, options)
         else
-          query = ''
+          super
         end
-
-        "http://localhost:8001/convert/http://localhost:3000#{url}#{query}"
       end
     end
   end

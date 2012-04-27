@@ -160,7 +160,7 @@ module Paperclip::Imgix
       @query = @parameters.to_query
     end
 
-    def to_query(options=nil)
+    def query(attachment, options=nil)
       if options.nil? || options.empty?
         @query
       else
