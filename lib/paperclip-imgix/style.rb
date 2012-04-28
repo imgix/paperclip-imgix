@@ -15,6 +15,7 @@ module Paperclip::Imgix
 
     def self.list(key, values)
       proc do |val, par|
+        val = val.to_s if val.is_a?(Symbol)
         val = val.split(',') if val.is_a?(String)
         if val.is_a?(Array) && !val.empty?
           par[key] = (values & val).join(',')
@@ -22,63 +23,100 @@ module Paperclip::Imgix
       end
     end
 
-    def self.string(key, match=nil)
+    def self.string(key, match=nil, keep=0)
       proc do |val, par|
         if val.is_a?(String)
-          par[key] = val if match.nil? || val.match(match)
+          if match
+            m = val.match(match)
+            par[key] = m[keep] if m
+          else
+            par[key] = val
+          end
         end
       end
     end
 
+    def self.color(key)
+      string(:key, /\A(#|0x)?([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\Z/i, 2)
+    end
+
     Keys = {
-      :crop      => list(:crop, %w{top bottom left right faces}),
-      :fmt       => string(:fmt, /\A(jpg|png|jp2)\Z/),
-      :q         => range(:q, 0, 100),
-      :page      => range(:page, 1, 9999),
-      :dpr       => range(:dpr, 0.01, 10.0, false),
-      :mark      => proc do |val, par|
-                      case val
-                      when Hash
-                        par[:mark] = val[:url]
-                        Keys[:markscale].call(val[:scale], par)
-                        Keys[:markalign].call(val[:align], par)
-                      when String
-                        par[:mark] = val
-                      end
-                    end,
-      :markscale => range(:markscale, 0, 100),
-      :markalign => list(:markalign, %w{top middle bottom left center right}),
-      :bg        => string(:bg, /\A(#|0x)?([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\Z/i),
-      :flip      => string(:flip, /\A(hv|vh|h|v)\Z/),
-      :rot       => range(:rot, 0, 359),
-      :bri       => range(:bri, -100, 100),
-      :con       => range(:con, -100, 100),
-      :exp       => range(:exp, -100, 100),
-      :high      => range(:high, -100, 100),
-      :shad      => range(:shad, -100, 100),
-      :gam       => range(:gam, -100, 100),
-      :vib       => range(:vib, -100, 100),
-      :sharp     => range(:sharp, 0, 100),
-      :hue       => range(:hue, 0, 359),
-      :sat       => range(:sat, -100, 100),
-      :sepia     => range(:sepia, 0, 100),
-      :nr        => proc do |val, par|
-                      case val
-                      when Hash
-                        val = val[:level]
-                        Keys[:nrs].call(val[:sharpness], par)
-                      when Array
-                        val = val[0]
-                        Keys[:nrs].call(val[1], par)
-                      end
-                      if val.is_a?(Numeric)
-                        if val < 0 then val = 0
-                        elsif val > 100 then val = 100
+      :crop        => list(:crop, %w{top bottom left right faces}),
+      :fmt         => string(:fmt, /\A(jpg|png|jp2)\Z/),
+      :q           => range(:q, 0, 100),
+      :page        => range(:page, 1, 9999),
+      :dpr         => range(:dpr, 0.01, 10.0, false),
+      :mark        => proc do |val, par|
+                        case val
+                        when Hash
+                          par[:mark] = val[:url]
+                          Keys[:markscale].call(val[:scale], par)
+                          Keys[:markalign].call(val[:align], par)
+                        when String
+                          par[:mark] = val
                         end
-                        par[:nr] = val.round
-                      end
-                    end,
-      :nrs       => range(:nrs, 0, 100),
+                      end,
+      :markscale   => range(:markscale, 0, 100),
+      :markalign   => list(:markalign, %w{top middle bottom left center right}),
+      :bg          => color(:bg),
+      :flip        => string(:flip, /\A(hv|vh|h|v)\Z/),
+      :rot         => range(:rot, 0, 359),
+      :bri         => range(:bri, -100, 100),
+      :con         => range(:con, -100, 100),
+      :exp         => range(:exp, -100, 100),
+      :high        => range(:high, -100, 100),
+      :shad        => range(:shad, -100, 100),
+      :gam         => range(:gam, -100, 100),
+      :vib         => range(:vib, -100, 100),
+      :sharp       => range(:sharp, 0, 100),
+      :hue         => range(:hue, 0, 359),
+      :sat         => range(:sat, -100, 100),
+      :sepia       => range(:sepia, 0, 100),
+      :nr          => proc do |val, par|
+                        case val
+                        when Hash
+                          Keys[:nrs].call(val[:sharpness], par)
+                          val = val[:level]
+                        when Array
+                          Keys[:nrs].call(val[1], par)
+                          val = val[0]
+                        when TrueClass
+                          val = 20
+                        end
+                        if val.is_a?(Numeric)
+                          if val < 0 then val = 0
+                          elsif val > 100 then val = 100
+                          end
+                          par[:nr] = val.round
+                        end
+                      end,
+      :nrs         => range(:nrs, 0, 100),
+      :txt         => proc do |val, par|
+                        case val
+                        when Hash
+                          par[:txt] = val[:content] unless val[:content].blank?
+                          par[:txtfont] = Keys[:txtfont].call(val[:font], par)
+                          par[:txtsize] = Keys[:txtsize].call(val[:size], par)
+                          par[:txtclr] = Keys[:txtclr].call(val[:color], par)
+                          par[:txtalign] = Keys[:txtalign].call(val[:align], par)
+                          par[:txtclip] = Keys[:txtclip].call(val[:clip], par)
+                          par[:txtcliptxt] = Keys[:txtcliptxt].call(val[:clip_text], par)
+                          par[:txtpad] = Keys[:txtpad].call(val[:padding], par)
+                          par[:txtwidth] = Keys[:txtwidth].call(val[:width], par)
+                          par[:txtshad] = Keys[:txtshad].call(val[:shadow], par)
+                        when String
+                          par[:txt] = val
+                        end
+                      end,
+      :txtfont     => list(:txtfont, %w{serif sans-serif monospace cursive fantasy bold italic}),
+      :txtsize     => range(:txtsize, 4, 200),
+      :txtclr      => color(:txtclr),
+      :txtalign    => list(:txtalign, %w{left center right top middle bottom}),
+      :txtclip     => list(:txtclip, %w{start middle end}),
+      :txtcliptxt  => string(:txtcliptxt),
+      :txtpad      => range(:txtpad, 0, 2048),
+      :txtwidth    => range(:txtwidth, 0, 2048),
+      :txtshad     => range(:txtshad, 0, 512),
 
       # aliases
       :format                    => :fmt,
@@ -97,11 +135,23 @@ module Paperclip::Imgix
       :gamma                     => :gam,
       :vibrance                  => :vib,
       :sharpness                 => :sharp,
+      :sharpen                   => :sharp,
       :saturation                => :sat,
       :noise_reduction           => :nr,
       :reduce_noise              => :nr,
       :noise_reduction_sharpness => :nrs,
-      :reduce_noise_sharpness    => :nrs
+      :reduce_noise_sharpness    => :nrs,
+      :text                      => :txt,
+      :text_content              => :txt,
+      :text_font                 => :txtfont,
+      :text_size                 => :txtsize,
+      :text_color                => :txtclr,
+      :text_align                => :txtalign,
+      :text_clip                 => :txtclip,
+      :text_clip_text            => :txtcliptxt,
+      :text_padding              => :txtpad,
+      :text_width                => :txtwidth,
+      :text_shadow               => :txtshad
     }
 
     def self.parameters(style, processors=nil)
@@ -153,22 +203,41 @@ module Paperclip::Imgix
       params
     end
 
+    def self.query(style, processors)
+      query_from_parameters(parameters(style, processors))
+    end
+
+    MarkKeys = [:markalign, :markscale]
+    TextKeys = [:txtfont, :txtsize, :txtclr, :txtalign, :txtclip, :txtcliptxt, :txtpad, :txtwidth, :txtshad]
+
+    def self.query_from_parameters(params)
+      has_mark = params.key?(:mark)
+      has_txt = params.key?(:txt)
+      params.map do |key, val|
+        next if !has_mark && MarkKeys.include?(key)
+        next if !has_txt && TextKeys.include?(key)
+        val = CGI.escape(val) if val.is_a?(String)
+        "#{key}=#{val}"
+      end.compact.join('&')
+    end
+
     attr_reader :parameters, :query
 
     def initialize(style, processors=nil)
       @parameters = self.class.parameters(style, processors)
-      @query = @parameters.to_query
+      @query = self.class.query_from_parameters(@parameters)
     end
 
     def query(attachment, options=nil)
-      if options.nil? || options.empty?
+      style = options && options[:style]
+      if style.nil? || style.empty?
         @query
       else
-        params = self.class.parameters(options)
+        params = self.class.parameters(style)
         if params.empty?
           @query
         else
-          @parameters.merge(params).to_query
+          self.class.query_from_parameters(@parameters.merge(params))
         end
       end
     end
