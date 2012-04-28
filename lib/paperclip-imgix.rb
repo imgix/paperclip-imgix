@@ -18,10 +18,10 @@ module Paperclip::Imgix
             when Hash
               value
             end
-    unless !value.is_a?(Hash) or value.empty?
+    if value.is_a?(Hash) && !value.empty?
       value.stringify_keys!
       env = Rails.env if env.blank?
-      Paperclip::Imgix::Source.new(value[env] || value)
+      Paperclip::Imgix::Source.create(value[env] || value)
     end
   end
 

@@ -20,7 +20,7 @@ module Paperclip::Imgix
 
     RIGHT_HERE = "#{__FILE__.gsub(%r{^\./}, "")}:#{__LINE__ + 3}"
     def url attachment, style_name
-      raise Errors::InfiniteInterpolationError if caller.any?{|b| b.index(RIGHT_HERE) }
+      raise Paperclip::Errors::InfiniteInterpolationError if caller.any?{|b| b.index(RIGHT_HERE) }
       attachment.url(style_name, :timestamp => false, :escape => false, :is_path_interpolation => true)
     end
   end
