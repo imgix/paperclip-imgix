@@ -209,6 +209,7 @@ module Paperclip::Imgix
 
     MarkKeys = [:markalign, :markscale]
     TextKeys = [:txtfont, :txtsize, :txtclr, :txtalign, :txtclip, :txtcliptxt, :txtpad, :txtwidth, :txtshad]
+    URIEscape = Regexp.new("[^#{URI::PATTERN::UNRESERVED}]")
 
     def self.query_from_parameters(params)
       has_mark = params.key?(:mark)
@@ -216,7 +217,7 @@ module Paperclip::Imgix
       params.map do |key, val|
         next if !has_mark && MarkKeys.include?(key)
         next if !has_txt && TextKeys.include?(key)
-        val = CGI.escape(val) if val.is_a?(String)
+        val = URI.escape(val, URIEscape) if val.is_a?(String)
         "#{key}=#{val}"
       end.compact.join('&')
     end
