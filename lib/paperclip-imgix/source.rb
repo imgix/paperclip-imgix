@@ -4,8 +4,12 @@ module Paperclip::Imgix
   class Source
     attr_reader :domain_name, :type
 
+    def self.canonical_type(type)
+      type.to_s.downcase.tr('_', '').to_sym
+    end
+
     def self.valid_type?(type)
-      [:webfolder, :webproxy, :s3].include?(type.to_sym)
+      [:webfolder, :webproxy, :s3].include?(canonical_type(type))
     end
 
     def self.create(opts)
@@ -17,7 +21,7 @@ module Paperclip::Imgix
 
     def initialize(options)
       @domain_name = options['domain_name']
-      @type = options['type'].to_sym
+      @type = self.class.canonical_type(options['type'])
       @secure_url_token = options['secure_url_token']
 
       case @type
