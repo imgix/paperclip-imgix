@@ -20,16 +20,11 @@ module Paperclip::Imgix
       @type = options['type'].to_sym
       @secure_url_token = options['secure_url_token']
 
-      fields = options['fields']
-      fields = fields.stringify_keys if fields
-
       case @type
-      when :webfolder
-        @base_url = URI.parse(fields['base_url'])
+      when :webfolder, :s3
+        @base_url = URI.parse(options['prefix'] || options['base_url'] || '/')
       when :webproxy
         @asset_paths = ActionView::AssetPaths.new(Rails.application.config.action_controller)
-      when :s3
-        @base_url = URI.parse(fields['prefix'])
       else
         raise Paperclip::Imgix::Errors::InvalidSourceType
       end
