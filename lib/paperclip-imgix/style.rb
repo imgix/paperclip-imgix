@@ -52,8 +52,8 @@ module Paperclip::Imgix
                           par[:mark] = val[:url]
                           Keys[:markscale].call(val[:scale], par)
                           Keys[:markalign].call(val[:align], par)
-                        when String
-                          par[:mark] = val
+                        when String, URL
+                          par[:mark] = val.to_s
                         end
                       end,
       :markscale   => range(:markscale, 0, 100),
