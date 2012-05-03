@@ -28,6 +28,10 @@ module Paperclip::Imgix
       when :webfolder, :s3
         @base_url = URI.parse(options['prefix'] || options['base_url'] || '/')
       when :webproxy
+        if options['base_url']
+          base_url = URI.parse(options['base_url'])
+          @base_url = base_url unless base_url.host.blank?
+        end
         @asset_paths = ActionView::AssetPaths.new(Rails.application.config.action_controller)
       else
         raise Paperclip::Imgix::Errors::InvalidSourceType
@@ -52,7 +56,13 @@ module Paperclip::Imgix
                  end
                when :webproxy
                  url = URI.parse(path_to_image(attachment.url(:original, options)))
-                 raise Paperclip::Imgix::Errors::AssetHostRequired if url.host.blank?
+                 if url.host.blank?
+                   if @base_url
+                     url = @base_url.merge(url)
+                   else
+                     raise Paperclip::Imgix::Errors::AssetHostRequired
+                   end
+                 end
                  url.to_s
                end
 
