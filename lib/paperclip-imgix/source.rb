@@ -23,6 +23,7 @@ module Paperclip::Imgix
       @domain_name = options['domain_name']
       @type = self.class.canonical_type(options['type'])
       @secure_url_token = options['secure_url_token']
+      @protocol = options['protocol'] || 'http'
 
       case @type
       when :webfolder, :s3
@@ -73,7 +74,7 @@ module Paperclip::Imgix
           path << "&s=" << signature
         end
 
-        "http://#{@domain_name}.imgix.net#{path}"
+        "#{@protocol}://#{@domain_name}.imgix.net#{path}"
       end
     end
 
