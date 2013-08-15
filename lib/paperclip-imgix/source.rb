@@ -2,7 +2,7 @@ require 'digest/md5'
 
 module Paperclip::Imgix
   class Source
-    attr_reader :domain_name, :type
+    attr_reader :domain_name, :host_name, :type
 
     def self.canonical_type(type)
       type.to_s.downcase.tr('_', '').to_sym
@@ -14,13 +14,14 @@ module Paperclip::Imgix
 
     def self.create(opts)
       opts = opts.stringify_keys
-      if opts && !opts['domain_name'].blank? && valid_type?(opts['type'])
+      if opts && (!opts['domain_name'].blank? || !opts['host_name'].blank?) && valid_type?(opts['type'])
         new(opts)
       end
     end
 
     def initialize(options)
       @domain_name = options['domain_name']
+      @host_name = options['host_name']
       @type = self.class.canonical_type(options['type'])
       @secure_url_token = options['secure_url_token']
       @protocol = options['protocol'] || 'http'
@@ -74,7 +75,10 @@ module Paperclip::Imgix
           path << "&s=" << signature
         end
 
-        "#{@protocol}://#{@domain_name}.imgix.net#{path}"
+        # Use host name if provided. Otherwise use sub-domain name.
+        hostname = @host_name.blank? ? "#{@domain_name}.imgix.net" : @host_name
+
+        "#{@protocol}://#{hostname}#{path}"
       end
     end
 
