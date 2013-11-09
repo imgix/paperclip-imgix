@@ -21,7 +21,7 @@ module Paperclip::Imgix
 
     def initialize(options)
       @domain_name = options['domain_name']
-      @host_name = options['host_name']
+      @hostnames = options['hostnames']
       @type = self.class.canonical_type(options['type'])
       @secure_url_token = options['secure_url_token']
       @protocol = options['protocol'] || 'http'
@@ -76,7 +76,11 @@ module Paperclip::Imgix
         end
 
         # Use host name if provided. Otherwise use sub-domain name.
-        hostname = @host_name.blank? ? "#{@domain_name}.imgix.net" : @host_name
+        if @hostnames.present?
+          hostname = @hostnames[path.hash % @hostnames.length]
+        else
+          hostname = "#{@domain_name}.imgix.net"
+        end
 
         "#{@protocol}://#{hostname}#{path}"
       end
