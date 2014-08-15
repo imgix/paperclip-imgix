@@ -121,8 +121,8 @@ module Paperclip::Imgix
                         case val
                         when Hash
                           par[:mark] = val[:url]
-                          Keys[:markw].call(val[:w] or val[:width], par)
-                          Keys[:markh].call(val[:h] or val[:height], par)
+                          Keys[:markw].call(val[:w] || val[:width], par)
+                          Keys[:markh].call(val[:h] || val[:height], par)
                           Keys[:markfit].call(val[:fit], par)
                           Keys[:markpad].call(val[:pad], par)
                           Keys[:markscale].call(val[:scale], par)
@@ -170,7 +170,7 @@ module Paperclip::Imgix
       :border      => proc do |val, par|
                         case val
                         when Hash
-                          par[:border] = "#{val[:width] or val[:w] or 4},#{val[:color]}"
+                          par[:border] = "#{val[:width] || val[:w] || 4},#{val[:color]}"
                         when COLOR_EXP
                           par[:border] = "4,#{val}"
                         end
@@ -206,7 +206,7 @@ module Paperclip::Imgix
       :text_content              => :txt,
       :text_font                 => :txtfont,
       :text_padding              => :txtpad,
-      :text_shadow               => :txtshad
+      :text_shadow               => :txtshad,
       :text_size                 => :txtsize,
       :text_width                => :txtwidth,
       :vibrance                  => :vib,
