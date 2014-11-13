@@ -36,31 +36,42 @@ module Paperclip::Imgix
       end
     end
 
+    COLOR_EXP = /\A(#|0x)?([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\Z/i
+
     def self.color(key)
-      string(:key, /\A(#|0x)?([0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})\Z/i, 2)
+      string(:key, COLOR_EXP, 2)
     end
 
     Keys = {
+      # resize
       :crop        => list(:crop, %w{top bottom left right faces}),
+      :dpr         => range(:dpr, 0.01, 8.0, false),
+      :rot         => range(:rot, 0, 359),
+      :or          => list(:or, [0,1,2,3,4,5,6,7,8,9,90,180,270]),
+      :flip        => string(:flip, /\A(hv|vh|h|v)\Z/),
+      :rect        => string(:rect, /\A\d+,\d+,\d+,\d+\Z/),
+
+      # format
       :fmt         => string(:fmt, /\A(jpg|png|jp2)\Z/),
       :q           => range(:q, 0, 100),
-      :page        => range(:page, 1, 9999),
-      :dpr         => range(:dpr, 0.01, 10.0, false),
-      :mark        => proc do |val, par|
+
+      # auto
+      :auto        => proc do |val, par|
                         case val
-                        when Hash
-                          par[:mark] = val[:url]
-                          Keys[:markscale].call(val[:scale], par)
-                          Keys[:markalign].call(val[:align], par)
-                        when String, URL
-                          par[:mark] = val.to_s
+                        when TrueClass
+                          par[:auto] = "true"
+                        else
+                          val = val.to_s if val.is_a?(Symbol)
+                          val = val.split(',') if val.is_a?(String)
+                          if val.is_a?(Array) && !val.empty?
+                            par[key] = (%w{format enchance redeye} & val).join(',')
+                          end
                         end
                       end,
-      :markscale   => range(:markscale, 0, 100),
-      :markalign   => list(:markalign, %w{top middle bottom left center right}),
-      :bg          => color(:bg),
-      :flip        => string(:flip, /\A(hv|vh|h|v)\Z/),
-      :rot         => range(:rot, 0, 359),
+
+      # enhance
+      :hue         => range(:hue, 0, 359),
+      :sat         => range(:sat, -100, 100),
       :bri         => range(:bri, -100, 100),
       :con         => range(:con, -100, 100),
       :exp         => range(:exp, -100, 100),
@@ -68,10 +79,6 @@ module Paperclip::Imgix
       :shad        => range(:shad, -100, 100),
       :gam         => range(:gam, -100, 100),
       :vib         => range(:vib, -100, 100),
-      :sharp       => range(:sharp, 0, 100),
-      :hue         => range(:hue, 0, 359),
-      :sat         => range(:sat, -100, 100),
-      :sepia       => range(:sepia, 0, 100),
       :nr          => proc do |val, par|
                         case val
                         when Hash
@@ -91,6 +98,47 @@ module Paperclip::Imgix
                         end
                       end,
       :nrs         => range(:nrs, 0, 100),
+      :sharp       => range(:sharp, 0, 100),
+
+      # stylize
+      :blur        => range(:blur, 0, 1000),
+      :mono        => color(:mono),
+      :sepia       => range(:sepia, 0, 100),
+      :htn         => range(:htn, 0, 100),
+      :px          => range(:px, 0, 100),
+
+      # mask
+      :mask        => proc do |val, par|
+                        if val == :ellipse
+                          par[:mask] = "ellipse"
+                        elsif val.is_a? String
+                          par[:mask] = val
+                        end
+                      end,
+
+      # watermark
+      :mark        => proc do |val, par|
+                        case val
+                        when Hash
+                          par[:mark] = val[:url]
+                          Keys[:markw].call(val[:w] || val[:width], par)
+                          Keys[:markh].call(val[:h] || val[:height], par)
+                          Keys[:markfit].call(val[:fit], par)
+                          Keys[:markpad].call(val[:pad], par)
+                          Keys[:markscale].call(val[:scale], par)
+                          Keys[:markalign].call(val[:align], par)
+                        when String, URL
+                          par[:mark] = val.to_s
+                        end
+                      end,
+      :markw       => range(:markw, 0, 2048, false),
+      :markh       => range(:markh, 0, 2048, false),
+      :markfit     => list(:markfit, %w{clip cl crop cr fill clamp min max scale}),
+      :markpad     => range(:markpad, 0, 2048),
+      :markscale   => range(:markscale, 0, 100),
+      :markalign   => list(:markalign, %w{top middle bottom left center right}),
+
+      # text
       :txt         => proc do |val, par|
                         case val
                         when Hash
@@ -118,40 +166,53 @@ module Paperclip::Imgix
       :txtwidth    => range(:txtwidth, 0, 2048),
       :txtshad     => range(:txtshad, 0, 512),
 
+      # general
+      :border      => proc do |val, par|
+                        case val
+                        when Hash
+                          par[:border] = "#{val[:width] || val[:w] || 4},#{val[:color]}"
+                        when COLOR_EXP
+                          par[:border] = "4,#{val}"
+                        end
+                      end,
+      :bg          => color(:bg),
+      :page        => range(:page, 1, 9999),
+
       # aliases
-      :format                    => :fmt,
-      :quality                   => :q,
-      :watermark                 => :mark,
-      :watermark_scale           => :markscale,
-      :watermark_align           => :markalign,
       :background                => :bg,
       :background_color          => :bg,
-      :rotate                    => :rot,
       :brightness                => :bri,
       :contrast                  => :con,
       :exposure                  => :exp,
-      :highlight                 => :high,
-      :shadow                    => :shad,
+      :format                    => :fmt,
       :gamma                     => :gam,
-      :vibrance                  => :vib,
-      :sharpness                 => :sharp,
-      :sharpen                   => :sharp,
-      :saturation                => :sat,
+      :highlight                 => :high,
       :noise_reduction           => :nr,
-      :reduce_noise              => :nr,
       :noise_reduction_sharpness => :nrs,
+      :orient                    => :or,
+      :quality                   => :q,
+      :reduce_noise              => :nr,
       :reduce_noise_sharpness    => :nrs,
+      :rotate                    => :rot,
+      :saturation                => :sat,
+      :shadow                    => :shad,
+      :sharpen                   => :sharp,
+      :sharpness                 => :sharp,
       :text                      => :txt,
-      :text_content              => :txt,
-      :text_font                 => :txtfont,
-      :text_size                 => :txtsize,
-      :text_color                => :txtclr,
       :text_align                => :txtalign,
       :text_clip                 => :txtclip,
       :text_clip_text            => :txtcliptxt,
+      :text_color                => :txtclr,
+      :text_content              => :txt,
+      :text_font                 => :txtfont,
       :text_padding              => :txtpad,
+      :text_shadow               => :txtshad,
+      :text_size                 => :txtsize,
       :text_width                => :txtwidth,
-      :text_shadow               => :txtshad
+      :vibrance                  => :vib,
+      :watermark                 => :mark,
+      :watermark_align           => :markalign,
+      :watermark_scale           => :markscale,
     }
 
     def self.parameters(style, processors=nil)
