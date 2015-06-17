@@ -1,5 +1,10 @@
 # Paperclip::Imgix
 
+---
+
+**Note:** This project is not actively maintained, and will not work with the latest versions of Paperclip. We instead recommend using our lighter-weight [imgix-rb](https://github.com/imgix/imgix-rb) for building imgix URLs.
+---
+
 Add the power, speed, and adaptability of [Imgix](http://www.imgix.com) to your Rails project without changing your code. This plugin is designed to work seamlessly with new or existing projects that use [Paperclip](https://github.com/thoughtbot/paperclip) for image management, but removes the hassle, slowness, and rigidity of ImageMagick. You'll get faster uploads for your users, and when you decide to change your site's design using a different image size, you won't wait ages running `rake paperclip:refresh` on your massive image set.
 
 There is one point to be aware of when developing with this plugin. Because Imgix is a proxy, the source images need to be publicly accessible. In production, this is not an issue, but in development it requires either using the [S3](http://rubydoc.info/gems/paperclip/Paperclip/Storage/S3) storage option, or ensuring your development images can be publicly addressed. We are looking into some solutions for this, but if neither of these options can work for you, do [let us know](https://github.com/zebrafishlabs/paperclip-imgix/issues).
