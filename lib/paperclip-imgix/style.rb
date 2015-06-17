@@ -64,7 +64,7 @@ module Paperclip::Imgix
                           val = val.to_s if val.is_a?(Symbol)
                           val = val.split(',') if val.is_a?(String)
                           if val.is_a?(Array) && !val.empty?
-                            par[key] = (%w{format enchance redeye} & val).join(',')
+                            par[key] = (%w{format enhance redeye} & val).join(',')
                           end
                         end
                       end,
