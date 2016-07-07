@@ -44,7 +44,7 @@ module Paperclip::Imgix
 
     Keys = {
       # resize
-      :crop        => list(:crop, %w{top bottom left right faces}),
+      :crop        => list(:crop, %w{top bottom left right faces entropy}),
       :dpr         => range(:dpr, 0.01, 8.0, false),
       :rot         => range(:rot, 0, 359),
       :or          => list(:or, [0,1,2,3,4,5,6,7,8,9,90,180,270]),
@@ -64,7 +64,7 @@ module Paperclip::Imgix
                           val = val.to_s if val.is_a?(Symbol)
                           val = val.split(',') if val.is_a?(String)
                           if val.is_a?(Array) && !val.empty?
-                            par[key] = (%w{format enchance redeye} & val).join(',')
+                            par[key] = (%w{format enhance redeye} & val).join(',')
                           end
                         end
                       end,
